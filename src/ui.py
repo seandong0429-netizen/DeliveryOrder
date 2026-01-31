@@ -109,7 +109,7 @@ class DeliveryApp:
 
         filepath = filedialog.askopenfilename(
             title="选择产品资料表格 (Select Excel)",
-            filetypes=[("Excel Files", "*.xlsx;*.xls")]
+            filetypes=[("Excel Files", "*.xlsx *.xls")]
         )
         if not filepath: return
         
