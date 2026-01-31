@@ -5,7 +5,7 @@ a = Analysis(
     ['src/main.py'],
     pathex=[],
     binaries=[],
-    datas=[('wechat_qr.png', '.')],
+    datas=[('wechat_qr.png', '.'), ('resources', 'resources')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -35,10 +35,11 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
+    icon='resources/app_icon.ico',
 )
 app = BUNDLE(
     exe,
     name='DeliveryOrderGen.app',
-    icon=None,
+    icon='resources/app_icon.icns',
     bundle_identifier=None,
 )
