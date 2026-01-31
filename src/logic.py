@@ -2,8 +2,8 @@ import json
 import os
 import datetime
 import sys
+import debug_utils
 
-# Paths to data files
 # Paths to data files
 if getattr(sys, 'frozen', False):
     # Frozen (EXE/APP)
@@ -14,20 +14,29 @@ if getattr(sys, 'frozen', False):
         external_config = os.path.join(possible_base, 'config.json')
         external_products = os.path.join(possible_base, 'products.json')
         
+        debug_utils.log(f"Path Check: Base={base}, PossibleBase={possible_base}")
+        
         if os.path.exists(external_config) or os.path.exists(external_products):
              BASE_DIR = possible_base
+             debug_utils.log(f"Using Portable Mode: {BASE_DIR}")
         else:
              # Installed Mode: Use ~/Documents/DeliveryOrderData
              user_dir = os.path.expanduser("~/Documents/DeliveryOrderData")
              if not os.path.exists(user_dir):
-                 os.makedirs(user_dir)
+                 try:
+                    os.makedirs(user_dir)
+                 except Exception as e:
+                    debug_utils.log(f"Failed to create user_dir {user_dir}: {e}")
              BASE_DIR = user_dir
+             debug_utils.log(f"Using Installed Mode: {BASE_DIR}")
     else:
         # Windows/Linux EXE
         BASE_DIR = base
+        debug_utils.log(f"Using Standard Frozen Mode: {BASE_DIR}")
 else:
     # Source Code
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    debug_utils.log(f"Using Source Code Mode: {BASE_DIR}")
 
 PRODUCTS_FILE = os.path.join(BASE_DIR, 'products.json')
 CONFIG_FILE = os.path.join(BASE_DIR, 'config.json')
@@ -38,14 +47,16 @@ class ProductManager:
         self.load_products()
 
     def load_products(self):
+        debug_utils.log(f"Loading products from {PRODUCTS_FILE}")
         if os.path.exists(PRODUCTS_FILE):
             try:
                 with open(PRODUCTS_FILE, 'r', encoding='utf-8') as f:
                     self.products = json.load(f)
             except Exception as e:
-                print(f"Error loading products: {e}")
+                debug_utils.log(f"Error loading products: {e}")
                 self.products = []
         else:
+            debug_utils.log("No products file found, starting new.")
             self.products = []
 
     def get_product_names(self):
@@ -71,8 +82,11 @@ class ProductManager:
         try:
             with open(PRODUCTS_FILE, 'w', encoding='utf-8') as f:
                 json.dump(self.products, f, indent=2, ensure_ascii=False)
+            debug_utils.log("Products saved successfully.")
         except Exception as e:
-            print(f"Error saving products: {e}")
+            debug_utils.log(f"Error saving products to {PRODUCTS_FILE}: {e}")
+            # Re-raise so UI can handle/show error if needed, or at least we know it failed
+            raise e
 
     def import_from_excel(self, filepath):
         """Import products from an Excel file."""
