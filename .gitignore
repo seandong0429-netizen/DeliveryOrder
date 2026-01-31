@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+dist/
+build/
+.DS_Store
+*.log
+local_config.json
+# Keep config.json? Maybe, if it has sequence numbers we might want to ignore it or keep it.
+# Usually config with local paths should be ignored.
+# The user's config has "last_save_path", so it's local.
+config.json
+orders.json
