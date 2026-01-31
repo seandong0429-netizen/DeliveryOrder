@@ -8,6 +8,7 @@ from history import HistoryManager
 from export_pdf import export_pdf
 from export_excel import export_to_excel
 import sys
+import debug_utils
 
 class DeliveryApp:
     def __init__(self, root):
@@ -89,6 +90,7 @@ class DeliveryApp:
         ttk.Button(top, text="确定 / OK", command=top.destroy).pack(pady=10)
 
     def import_products(self):
+        debug_utils.log("User clicked Import Products")
         # Show instruction first
         msg = (
             "请准备好 Excel 表格 (.xlsx)，确保包含以下列名（任选其一）：\n\n"
@@ -105,24 +107,31 @@ class DeliveryApp:
             "是否立即选择文件导入？"
         )
         if not messagebox.askokcancel("导入说明 / Import Help", msg):
+            debug_utils.log("User cancelled import instruction")
             return
 
         filepath = filedialog.askopenfilename(
             title="选择产品资料表格 (Select Excel)",
             filetypes=[("Excel Files", "*.xlsx *.xls")]
         )
-        if not filepath: return
+        if not filepath: 
+            debug_utils.log("User cancelled file selection")
+            return
         
+        debug_utils.log(f"Selected file: {filepath}")
         try:
             count, error = self.product_manager.import_from_excel(filepath)
             if error:
+                debug_utils.log(f"Import Error: {error}")
                 messagebox.showerror("Import Failed", f"Error: {error}")
             else:
+                debug_utils.log(f"Import Success: {count}")
                 messagebox.showinfo("Success", f"成功导入 {count} 个产品！\nSuccessfully imported {count} items.")
                 # Refresh combobox
                 self.all_product_names = self.product_manager.get_product_names()
                 self.cb_product['values'] = self.all_product_names
         except Exception as e:
+             debug_utils.log(f"Import crashed: {e}")
              messagebox.showerror("Error", f"Import crashed: {e}")
 
     def setup_ui(self):
@@ -399,19 +408,27 @@ class DeliveryApp:
         self.entry_customer['values'] = data
 
     def open_batch_add(self):
+        debug_utils.log("User clicked Batch Add")
         # Open dialog
         dialog = BatchSelectionDialog(self.root, self.product_manager)
         self.root.wait_window(dialog)
         
         # Process returned items
         if dialog.selected_items:
+            debug_utils.log(f"Batch added {len(dialog.selected_items)} items")
             for item in dialog.selected_items:
                 self.current_items.append(item)
             self.refresh_tree()
+        else:
+            debug_utils.log("Batch add closed with no selection")
 
     def add_item(self):
-        name = self.cb_product.get()
-        if not name: return
+        debug_utils.log("User clicked Add Item")
+        name = self.cb_product.get().strip()
+        if not name: 
+            debug_utils.log("Add Item: Name is empty")
+            messagebox.showwarning("提示 (Info)", "请选择或输入商品名称\nPlease select or enter a Product Name")
+            return
         
         # Get Price/Unit from DB or Default
         p = self.product_manager.get_product_by_name(name)

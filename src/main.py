@@ -5,17 +5,22 @@ from ui import DeliveryApp
 import sys
 import os
 
+import debug_utils
+
 def show_error(exc, val, tb):
     """Global error handler to show errors in a messagebox."""
     err_msg = "".join(traceback.format_exception(exc, val, tb))
     print("Error caught:", err_msg) # Still print to console/log
+    debug_utils.log(f"Global Exception caught: {err_msg}")
+    
     try:
         # Ensure we have a root window if possible, though messagebox works without one mostly
         messagebox.showerror("Error / 错误", f"An error occurred:\n\n{err_msg}")
     except:
-        pass
+         debug_utils.log("Failed to show messagebox.")
 
 def main():
+    debug_utils.log("Application Starting...")
     root = tk.Tk()
     
     # Register global exception handlers
