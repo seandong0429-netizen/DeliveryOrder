@@ -4,24 +4,29 @@ import datetime
 import sys
 
 # Paths to data files
+# Paths to data files
 if getattr(sys, 'frozen', False):
-    # If frozen (EXE), look in the same directory as the executable
+    # Frozen (EXE/APP)
     base = os.path.dirname(sys.executable)
-    # Check if we are in a macOS Bundle ( Contents/MacOS )
     if sys.platform == 'darwin' and 'Contents/MacOS' in base:
-        # Move up 3 levels to get out of .app
-        # .../MyApp.app/Contents/MacOS -> .../MyApp.app/Contents -> .../MyApp.app -> .../
+        # Check external folder (Portable Mode)
         possible_base = os.path.abspath(os.path.join(base, '../../..'))
-        # If products.json exists there, use it. Otherwise default to base (inside app? or maybe we prefer external)
-        # We want to favor the external one so user can edit it.
-        if os.path.exists(os.path.join(possible_base, 'products.json')) or os.path.exists(os.path.join(possible_base, 'config.json')):
-            BASE_DIR = possible_base
+        external_config = os.path.join(possible_base, 'config.json')
+        external_products = os.path.join(possible_base, 'products.json')
+        
+        if os.path.exists(external_config) or os.path.exists(external_products):
+             BASE_DIR = possible_base
         else:
-            BASE_DIR = base
+             # Installed Mode: Use ~/Documents/DeliveryOrderData
+             user_dir = os.path.expanduser("~/Documents/DeliveryOrderData")
+             if not os.path.exists(user_dir):
+                 os.makedirs(user_dir)
+             BASE_DIR = user_dir
     else:
+        # Windows/Linux EXE
         BASE_DIR = base
 else:
-    # If running from source, look in parent of src
+    # Source Code
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 PRODUCTS_FILE = os.path.join(BASE_DIR, 'products.json')

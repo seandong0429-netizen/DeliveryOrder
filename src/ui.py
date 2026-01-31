@@ -45,17 +45,22 @@ class DeliveryApp:
         top.resizable(False, False)
         
         # 1. Image
-        img_path = "wechat_qr.png"
+        img_name = "wechat_qr.png"
+        img_full_path = ""
         
-        # Resolve path similar to logic.py
-        if getattr(sys, 'frozen', False):
-            base = os.path.dirname(sys.executable)
-            if sys.platform == 'darwin' and 'Contents/MacOS' in base:
-               base = os.path.abspath(os.path.join(base, '../../..'))
-            img_full_path = os.path.join(base, img_path)
+        # Check PyInstaller Temp Bundle first (if bundled)
+        if hasattr(sys, '_MEIPASS'):
+            img_full_path = os.path.join(sys._MEIPASS, img_name)
         else:
-            base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-            img_full_path = os.path.join(base, img_path)
+            # Normal / External fallback
+            if getattr(sys, 'frozen', False):
+                base = os.path.dirname(sys.executable)
+                if sys.platform == 'darwin' and 'Contents/MacOS' in base:
+                   base = os.path.abspath(os.path.join(base, '../../..'))
+                img_full_path = os.path.join(base, img_name)
+            else:
+                base = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                img_full_path = os.path.join(base, img_name)
             
         try:
             if os.path.exists(img_full_path):

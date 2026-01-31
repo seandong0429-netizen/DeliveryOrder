@@ -5,7 +5,7 @@ a = Analysis(
     ['src/main.py'],
     pathex=[],
     binaries=[],
-    datas=[],
+    datas=[('wechat_qr.png', '.')],
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},

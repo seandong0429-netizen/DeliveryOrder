@@ -5,22 +5,28 @@ import sys
 from openpyxl import Workbook
 
 if getattr(sys, 'frozen', False):
+    # Frozen (EXE/APP)
     base = os.path.dirname(sys.executable)
     if sys.platform == 'darwin' and 'Contents/MacOS' in base:
+        # Check external folder (Portable Mode)
         possible_base = os.path.abspath(os.path.join(base, '../../..'))
-        if os.path.exists(os.path.join(possible_base, 'orders.json')): # Check orders.json or common dir
-            BASE_DIR = possible_base
+        external_orders = os.path.join(possible_base, 'orders.json')
+        external_config = os.path.join(possible_base, 'config.json')
+        
+        if os.path.exists(external_config) or os.path.exists(external_orders):
+             BASE_DIR = possible_base
         else:
-             # Fallback: check if we set it in logic? Use the same logic
-             if os.path.exists(os.path.join(possible_base, 'products.json')):
-                 BASE_DIR = possible_base
-             else:
-                 BASE_DIR = base
+             # Installed Mode: Use ~/Documents/DeliveryOrderData
+             user_dir = os.path.expanduser("~/Documents/DeliveryOrderData")
+             if not os.path.exists(user_dir):
+                 os.makedirs(user_dir)
+             BASE_DIR = user_dir
     else:
+        # Windows/Linux EXE
         BASE_DIR = base
 else:
+    # Source Code
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
 ORDERS_FILE = os.path.join(BASE_DIR, 'orders.json')
 
 class HistoryManager:
