@@ -1,14 +1,31 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
+import traceback
 from ui import DeliveryApp
+import sys
+import os
+
+def show_error(exc, val, tb):
+    """Global error handler to show errors in a messagebox."""
+    err_msg = "".join(traceback.format_exception(exc, val, tb))
+    print("Error caught:", err_msg) # Still print to console/log
+    try:
+        # Ensure we have a root window if possible, though messagebox works without one mostly
+        messagebox.showerror("Error / 错误", f"An error occurred:\n\n{err_msg}")
+    except:
+        pass
 
 def main():
     root = tk.Tk()
+    
+    # Register global exception handlers
+    root.report_callback_exception = show_error
+    sys.excepthook = show_error
+    
     root.title("简易出货单生成小工具 v3.7 (路径记忆版)")
     root.geometry("1000x700")
 
     # Set icon at runtime (Mainly for Windows title bar)
-    import os, sys
     try:
         if hasattr(sys, '_MEIPASS'):
             base = sys._MEIPASS
