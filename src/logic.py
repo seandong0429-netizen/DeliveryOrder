@@ -86,6 +86,29 @@ class ProductManager:
                 return
         self.products.append(product_data)
         self.save_products()
+        
+    def batch_add_products(self, product_list):
+        """Add multiple products and save only once."""
+        try:
+            updates = 0
+            adds = 0
+            for new_p in product_list:
+                found = False
+                for i, p in enumerate(self.products):
+                    if p['name'] == new_p['name']:
+                        self.products[i] = new_p
+                        found = True
+                        updates += 1
+                        break
+                if not found:
+                    self.products.append(new_p)
+                    adds += 1
+            
+            self.save_products()
+            debug_utils.log(f"Batch add finished: {adds} added, {updates} updated.")
+        except Exception as e:
+             debug_utils.log(f"Batch add failed: {e}")
+             raise e
 
     def save_products(self):
         try:
@@ -121,7 +144,8 @@ class ProductManager:
             if 'name' not in headers:
                 return 0, "Excel must contain a 'Name' or '商品名称' column."
 
-            count = 0
+            items_to_add = []
+            
             for row in sheet.iter_rows(min_row=2, values_only=True):
                 name = row[headers['name']]
                 if not name: continue # Skip empty names
@@ -145,10 +169,12 @@ class ProductManager:
                     "price": price
                 }
                 
-                self.add_product(product_data)
-                count += 1
+                items_to_add.append(product_data)
+
+            if items_to_add:
+                self.batch_add_products(items_to_add)
                 
-            return count, None
+            return len(items_to_add), None
             
         except Exception as e:
             return 0, str(e)
