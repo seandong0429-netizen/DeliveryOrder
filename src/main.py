@@ -27,7 +27,7 @@ def main():
     root.report_callback_exception = show_error
     sys.excepthook = show_error
     
-    root.title("简易出货单生成小工具 v3.8 (性能优化版)")
+    root.title("简易出货单生成小工具 v3.9 (性能优化版)")
     root.geometry("1000x700")
 
     # Set icon at runtime (Mainly for Windows title bar)
