@@ -20,8 +20,49 @@ class DeliveryApp:
         self.current_items = []
         self.history_displayed_items = [] # For history tab checkboxes
         
+        self.search_timer = None # For debounce
+        
         self.setup_menu()
         self.setup_ui()
+
+    # ... (setup_menu, show_about, import_products, setup_ui, setup_generate_tab, setup_history_tab, update_order_id_display, on_product_select ...)
+
+    def on_product_search(self, event):
+        try:
+            # Skip special keys to avoid excess processing/logging
+            if event.keysym in ['Up', 'Down', 'Left', 'Right', 'Return', 'Escape', 'Tab']:
+                return
+
+            # Debounce: Cancel previous timer if it exists
+            if self.search_timer:
+                self.root.after_cancel(self.search_timer)
+            
+            # Start new timer
+            self.search_timer = self.root.after(300, self.perform_search)
+            
+        except Exception as e:
+             debug_utils.log(f"Error in on_product_search event: {e}")
+
+    def perform_search(self):
+        """Actual search logic, called after delay."""
+        try:
+            typed = self.cb_product.get()
+            # debug_utils.log(f"Performing Search: {typed}") 
+            
+            if typed == '':
+                data = self.all_product_names
+            else:
+                data = [item for item in self.all_product_names if typed.lower() in item.lower()]
+            
+            # Only update if values changed to check flickering? 
+            # Tkinter update might close dropdown if it's open.
+            # But we need to update it.
+            self.cb_product['values'] = data
+            
+            # If dropdown is closed, maybe open it? 
+            # self.cb_product.event_generate('<Down>') # Optional: auto-open
+        except Exception as e:
+             debug_utils.log(f"Error in perform_search: {e}")
         
     def setup_menu(self):
         menubar = tk.Menu(self.root)
@@ -402,11 +443,24 @@ class DeliveryApp:
     def on_product_search(self, event):
         try:
             # Skip special keys to avoid excess processing/logging
-            if event.keysym in ['Up', 'Down', 'Left', 'Right', 'Return', 'Escape']:
+            if event.keysym in ['Up', 'Down', 'Left', 'Right', 'Return', 'Escape', 'Tab']:
                 return
 
+            # Debounce: Cancel previous timer if it exists
+            if self.search_timer:
+                self.root.after_cancel(self.search_timer)
+            
+            # Start new timer
+            self.search_timer = self.root.after(300, self.perform_search)
+            
+        except Exception as e:
+             debug_utils.log(f"Error in on_product_search event: {e}")
+
+    def perform_search(self):
+        """Actual search logic, called after delay."""
+        try:
             typed = self.cb_product.get()
-            # debug_utils.log(f"Searching: {typed}") # Verbose, maybe comment out if too much
+            # debug_utils.log(f"Performing Search: {typed}") 
             
             if typed == '':
                 data = self.all_product_names
@@ -415,7 +469,7 @@ class DeliveryApp:
             
             self.cb_product['values'] = data
         except Exception as e:
-             debug_utils.log(f"Error in on_product_search: {e}")
+             debug_utils.log(f"Error in perform_search: {e}")
     def on_customer_search(self, event):
         typed = self.entry_customer.get()
         if typed == '':
