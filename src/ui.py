@@ -298,6 +298,8 @@ class DeliveryApp:
         ttk.Label(top_frame, text="客户地址:").grid(row=0, column=2, sticky='w')
         self.entry_address = ttk.Entry(top_frame, width=30)
         self.entry_address.grid(row=0, column=3, padx=5, pady=5)
+        
+        ttk.Button(top_frame, text="客户导入 / Import", command=self.import_customers).grid(row=0, column=4, padx=5, pady=5)
 
         # Row 2 (Auto generated)
         ttk.Label(top_frame, text="单据编号:").grid(row=1, column=0, sticky='w')
