@@ -417,8 +417,20 @@ class DeliveryApp:
         # Let's show "YKYYYYMMDD..." placeholder or generate one now and hold it.
         pass
 
+    def on_product_click(self, event):
+        debug_utils.log("Combobox Clicked")
+
     def on_product_select(self, event):
         try:
+            # Cancel any pending search to prevent interference
+            if self.search_timer:
+                try:
+                    self.root.after_cancel(self.search_timer)
+                    debug_utils.log("Search timer cancelled on select.")
+                except:
+                    pass # Handle cases where timer might have already fired or been cancelled
+                self.search_timer = None
+
             name = self.cb_product.get()
             debug_utils.log(f"Combobox Selected: {name}")
             
