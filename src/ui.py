@@ -83,7 +83,6 @@ class DeliveryApp:
         menubar.add_cascade(label="文件 (File)", menu=file_menu)
         
         file_menu.add_command(label="导入产品资料 (Import Products)...", command=self.import_products)
-        file_menu.add_command(label="导入产品资料 (Import Products)...", command=self.import_products)
         file_menu.add_command(label="导入客户资料 (Import Customers)...", command=self.import_customers)
         file_menu.add_separator()
         file_menu.add_command(label="退出 (Exit)", command=self.root.quit)
@@ -136,7 +135,7 @@ class DeliveryApp:
 
         # 2. Text Info
         info_text = (
-            "简易出货单生成小工具 v3.6\n"
+            "简易出货单生成小工具 v3.9\n"
             "Simple Delivery Order Generator\n\n"
             "作者 / Author: Sean\n"
             "联系方式 / Contact: fishis@126.com\n\n"
