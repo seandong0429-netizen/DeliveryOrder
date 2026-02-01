@@ -416,6 +416,7 @@ class DeliveryApp:
             self.cb_product['values'] = data
         except Exception as e:
              debug_utils.log(f"Error in on_product_search: {e}")
+    def on_customer_search(self, event):
         typed = self.entry_customer.get()
         if typed == '':
             data = self.all_customers
