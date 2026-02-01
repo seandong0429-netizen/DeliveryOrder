@@ -685,12 +685,14 @@ class DeliveryApp:
         if not initial_dir:
             initial_dir = os.getcwd()
 
+        debug_utils.log(f"Opening save dialog (PDF). Initial dir: {initial_dir}")
         filepath = filedialog.asksaveasfilename(
             defaultextension=".pdf",
             initialdir=initial_dir,
             initialfile=default_filename,
             filetypes=[("PDF Files", "*.pdf")]
         )
+        debug_utils.log(f"Save dialog returned: {filepath}")
         
         if filepath:
             try:
@@ -708,6 +710,7 @@ class DeliveryApp:
                 # self.current_items = []
                 # self.refresh_tree()
             except Exception as e:
+                debug_utils.log(f"Export PDF failed: {e}")
                 messagebox.showerror("Error", f"Export failed: {e}")
 
     def load_history(self):

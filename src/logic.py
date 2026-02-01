@@ -150,21 +150,26 @@ class OrderNumberGenerator:
         self.load_config()
 
     def load_config(self):
+        debug_utils.log(f"Loading config from {CONFIG_FILE}")
         if os.path.exists(CONFIG_FILE):
             try:
                 with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
                     self.config = json.load(f)
-            except:
+                debug_utils.log("Config loaded successfully.")
+            except Exception as e:
+                debug_utils.log(f"Error loading config: {e}")
                 self.config = {"last_date": "", "sequence": 0}
         else:
+            debug_utils.log("Config file not found, creating default.")
             self.config = {"last_date": "", "sequence": 0}
 
     def save_config(self):
         try:
             with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
                 json.dump(self.config, f, indent=2)
+            debug_utils.log("Config saved successfully.")
         except Exception as e:
-            print(f"Error saving config: {e}")
+            debug_utils.log(f"Error saving config: {e}")
 
     def get_last_save_path(self):
         return self.config.get("last_save_path", "")

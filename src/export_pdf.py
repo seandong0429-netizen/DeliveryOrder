@@ -7,42 +7,60 @@ import sys
 
 def register_fonts():
     """Register Chinese fonts based on OS."""
-    font_path = None
-    # Common paths for Microsoft YaHei on Mac (if Office is installed) or Windows
-    font_paths = [
-        # Windows
-        ('c:/windows/fonts/msyh.ttf', 'c:/windows/fonts/msyhbd.ttf'),
-        # Mac Office / User Installed
-        (os.path.expanduser('~/Library/Fonts/Microsoft YaHei.ttf'), os.path.expanduser('~/Library/Fonts/Microsoft YaHei Bold.ttf')),
-        ('/Library/Fonts/Microsoft YaHei.ttf', '/Library/Fonts/Microsoft YaHei Bold.ttf'),
-        # Fallback to PingFang (Mac Standard)
-        ('/System/Library/Fonts/PingFang.ttc', '/System/Library/Fonts/PingFang.ttc'),
-        ('/System/Library/Fonts/STHeiti Light.ttc', '/System/Library/Fonts/STHeiti Medium.ttc'),
-    ]
-
-    regular_font = 'Helvetica'
-    bold_font = 'Helvetica-Bold'
+    font_reg = 'Helvetica'
+    font_bold = 'Helvetica-Bold'
     
-    for reg_path, bold_path in font_paths:
-        if os.path.exists(reg_path):
-            try:
-                # Register Regular
-                pdfmetrics.registerFont(TTFont('ChineseFont', reg_path))
-                regular_font = 'ChineseFont'
-                
-                # Register Bold (Try to find explicit bold file, or reuse regular if desperate)
-                if os.path.exists(bold_path):
-                    pdfmetrics.registerFont(TTFont('ChineseFont-Bold', bold_path))
-                    bold_font = 'ChineseFont-Bold'
-                else:
-                    # If no bold file, just use regular (no fake bold support in simple TTFont check)
-                    bold_font = 'ChineseFont'
-                    
-                return regular_font, bold_font
-            except:
-                continue
+    # Candidate fonts: (FilePath, FontName, SubFontIndex for TTC)
+    # Note: On Windows, msyh is often a TTC (Collection).
+    
+    candidates = []
+    
+    if sys.platform.startswith('win'):
+        # Windows Fonts
+        win_fonts = os.path.join(os.environ.get('WINDIR', 'C:\\Windows'), 'Fonts')
+        candidates.extend([
+            (os.path.join(win_fonts, 'msyh.ttc'), 'MicrosoftYaHei', 0),    # Win 7/10/11 standard
+            (os.path.join(win_fonts, 'msyh.ttf'), 'MicrosoftYaHei', -1),   # Older Win
+            (os.path.join(win_fonts, 'simsun.ttc'), 'SimSun', 0),          # Songti
+            (os.path.join(win_fonts, 'simhei.ttf'), 'SimHei', -1),         # Heiti
+        ])
+    elif sys.platform == 'darwin':
+        # macOS Fonts
+        candidates.extend([
+            (os.path.expanduser('~/Library/Fonts/Microsoft YaHei.ttf'), 'MicrosoftYaHei', -1),
+            ('/Library/Fonts/Microsoft YaHei.ttf', 'MicrosoftYaHei', -1),
+            ('/System/Library/Fonts/PingFang.ttc', 'PingFang', 0),
+            ('/System/Library/Fonts/STHeiti Light.ttc', 'STHeiti', 0),
+        ])
+    
+    # Default fallbacks (in case bundled in resources locally)
+    candidates.append(('resources/msyh.ttf', 'BundledYaHei', -1))
+    candidates.append(('resources/msyh.ttc', 'BundledYaHei', 0))
 
-    return regular_font, bold_font
+    try:
+        import debug_utils
+    except ImportError:
+        debug_utils = None
+
+    for path, name, sub_index in candidates:
+        if os.path.exists(path):
+            try:
+                if sub_index >= 0:
+                    # TTC Collection
+                    pdfmetrics.registerFont(TTFont(name, path, subfontIndex=sub_index))
+                else:
+                    # Normal TTF
+                    pdfmetrics.registerFont(TTFont(name, path))
+                
+                # Success
+                if debug_utils: debug_utils.log(f"Registered Font: {name} from {path}")
+                return name, name # Use same for bold if we don't have explicit bold (simpler)
+            except Exception as e:
+                if debug_utils: debug_utils.log(f"Failed to register {path}: {e}")
+                continue
+                
+    if debug_utils: debug_utils.log("Failed to register any Chinese font. Using Helvetica.")
+    return font_reg, font_bold
 
 def export_pdf(order_data, filepath, report_type='delivery', seller_info=None):
     # Use Landscape A4
