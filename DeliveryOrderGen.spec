@@ -1,12 +1,13 @@
 # -*- mode: python ; coding: utf-8 -*-
+import sys
 
 
 a = Analysis(
     ['src/main.py'],
-    pathex=[],
+    pathex=['src'],
     binaries=[],
     datas=[('wechat_qr.png', '.'), ('resources', 'resources')],
-    hiddenimports=[],
+    hiddenimports=['openpyxl', 'reportlab', 'PIL'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
@@ -32,10 +33,10 @@ exe = EXE(
     console=False,
     disable_windowed_traceback=False,
     argv_emulation=False,
-    target_arch=None,
+    target_arch='arm64' if sys.platform == 'darwin' else None,
     codesign_identity=None,
     entitlements_file=None,
-    icon='resources/app_icon.ico',
+    icon=['resources/app_icon.icns'],
 )
 app = BUNDLE(
     exe,

@@ -12,10 +12,12 @@ import debug_utils
 
 class DeliveryApp:
     def __init__(self, root):
+        debug_utils.log("DeliveryApp init started")
         self.root = root
         self.product_manager = ProductManager()
         self.order_generator = OrderNumberGenerator()
         self.history_manager = HistoryManager()
+        debug_utils.log("Managers initialized")
         
         self.current_items = []
         self.history_displayed_items = [] # For history tab checkboxes
@@ -23,7 +25,9 @@ class DeliveryApp:
         self.search_timer = None # For debounce
         
         self.setup_menu()
+        debug_utils.log("Menu setup done")
         self.setup_ui()
+        debug_utils.log("UI setup done")
 
     # ... (setup_menu, show_about, import_products, setup_ui, setup_generate_tab, setup_history_tab, update_order_id_display, on_product_select ...)
 
@@ -93,6 +97,9 @@ class DeliveryApp:
         # Check PyInstaller Temp Bundle first (if bundled)
         if hasattr(sys, '_MEIPASS'):
             img_full_path = os.path.join(sys._MEIPASS, img_name)
+        elif 'RESOURCEPATH' in os.environ:
+             # Py2App Bundle Resource Path
+             img_full_path = os.path.join(os.environ['RESOURCEPATH'], img_name)
         else:
             # Normal / External fallback
             if getattr(sys, 'frozen', False):

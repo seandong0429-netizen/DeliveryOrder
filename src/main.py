@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 import traceback
-from ui import DeliveryApp
+# from ui import DeliveryApp # Moved inside main to catch import errors with excepthook
 import sys
 import os
 
@@ -44,8 +44,13 @@ def main():
     except Exception:
         pass
 
-    app = DeliveryApp(root)
-    
+    try:
+        from ui import DeliveryApp
+        app = DeliveryApp(root)
+    except Exception as e:
+        show_error(type(e), e, e.__traceback__)
+        return
+
     root.mainloop()
 
 if __name__ == "__main__":

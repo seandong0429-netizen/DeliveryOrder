@@ -25,8 +25,21 @@ if getattr(sys, 'frozen', False):
         # If on Desktop/Downloads, this is usually True.
         
         if os.access(app_containing_dir, os.W_OK):
-             BASE_DIR = app_containing_dir
-             debug_utils.log(f"App dir is writable. Using Portable Mode: {BASE_DIR}")
+             # Special Cleanliness Rule for /Applications root
+             if app_containing_dir.rstrip(os.sep) == '/Applications':
+                 BASE_DIR = os.path.join(app_containing_dir, "DeliveryOrderData")
+                 if not os.path.exists(BASE_DIR):
+                     try:
+                         os.makedirs(BASE_DIR)
+                         debug_utils.log(f"Created data subfolder in Applications: {BASE_DIR}")
+                     except Exception as e:
+                         # Fallback if we thought we could write but couldn't make dir
+                         BASE_DIR = os.path.expanduser("~/Documents/DeliveryOrderData")
+             else:
+                 # Normal Portable Mode (Desktop, etc): Flat structure
+                 BASE_DIR = app_containing_dir
+
+             debug_utils.log(f"App dir is writable. Using Path: {BASE_DIR}")
         else:
              debug_utils.log(f"App dir {app_containing_dir} is NOT writable. Falling back to Documents.")
              # Installed Mode: Use ~/Documents/DeliveryOrderData
