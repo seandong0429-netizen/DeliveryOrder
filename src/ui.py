@@ -182,15 +182,26 @@ class DeliveryApp:
 
         try:
             # Configure ttk styles
-            style.configure(".", font=('Microsoft YaHei', 10))
-            style.configure("Treeview", font=('Microsoft YaHei', 10), rowheight=25)
-            style.configure("Treeview.Heading", font=('Microsoft YaHei', 11, 'bold')) # Slightly larger for heading
-            
-            # Configure standard tk widgets via option database
-            # Important: Font names with spaces must be wrapped in braces for Tcl
-            self.root.option_add('*Font', '{Microsoft YaHei} 10')
+            if sys.platform == 'darwin':
+                # Use standard Mac fonts to avoid rendering lag
+                default_font = ('Arial', 11)
+                heading_font = ('Arial', 12, 'bold')
+                
+                style.configure(".", font=default_font)
+                style.configure("Treeview", font=default_font, rowheight=25)
+                style.configure("Treeview.Heading", font=heading_font)
+                
+                # Apply to root option database
+                self.root.option_add('*Font', 'Arial 11')
+            else:
+                # Windows defaults
+                style.configure(".", font=('Microsoft YaHei', 10))
+                style.configure("Treeview", font=('Microsoft YaHei', 10), rowheight=25)
+                style.configure("Treeview.Heading", font=('Microsoft YaHei', 11, 'bold')) # Slightly larger for heading
+                self.root.option_add('*Font', '{Microsoft YaHei} 10')
+                
         except Exception as e:
-            print(f"Font config warning: {e}")
+            # print(f"Font config warning: {e}")
             pass
 
         # Tab 1: Generate Order
