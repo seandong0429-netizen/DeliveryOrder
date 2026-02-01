@@ -544,8 +544,7 @@ class DeliveryApp:
              product_data['price'] = 0.0
              product_data['unit'] = ''
              
-        self.product_manager.add_product(product_data)
-        
+        # Add to current items list (for PDF generation)
         item = {
             "name": name,
             "model": self.entry_model.get(),
@@ -562,6 +561,25 @@ class DeliveryApp:
         # Refresh combobox
         self.all_product_names = self.product_manager.get_product_names()
         self.cb_product['values'] = self.all_product_names
+
+        # Clear inputs
+        self.cb_product.set('')
+        self.entry_model.delete(0, tk.END)
+        self.entry_machine.delete(0, tk.END)
+        
+        # Async Save
+        import threading
+        def save_task():
+            try:
+                # This saves to disk
+                self.product_manager.add_product(product_data)
+                debug_utils.log("Async save complete.")
+            except Exception as e:
+                debug_utils.log(f"Async save failed: {e}")
+        
+        threading.Thread(target=save_task, daemon=True).start()
+        
+        debug_utils.log("UI updated, save task started.")
 
     def on_tree_double_click(self, event):
         # Identify region
