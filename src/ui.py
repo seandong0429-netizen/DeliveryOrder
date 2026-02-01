@@ -373,33 +373,49 @@ class DeliveryApp:
         # OR, we can just peek. But implementation was simple increment. 
         # Let's show "YKYYYYMMDD..." placeholder or generate it on app start?
         # Requirement: "Software opens OR click Add". 
-        # I'll modify logic to separate "generate_new" from "get_next". 
         # Let's show "YKYYYYMMDD..." placeholder or generate one now and hold it.
         pass
 
     def on_product_select(self, event):
-        name = self.cb_product.get()
-        p = self.product_manager.get_product_by_name(name)
-        if p:
-            self.entry_model.delete(0, tk.END)
-            self.entry_model.insert(0, p['model'])
-            # Unit and Price are no longer displayed, so no need to fill them.
-            # But we will use them in add_item.
+        try:
+            name = self.cb_product.get()
+            debug_utils.log(f"Combobox Selected: {name}")
             
-            # Fill Machine Model if exists
-            self.entry_machine.delete(0, tk.END)
-            self.entry_machine.insert(0, p.get('machine_model', ''))
+            p = self.product_manager.get_product_by_name(name)
+            if p:
+                debug_utils.log(f"Found product data: {p}")
+                self.entry_model.delete(0, tk.END)
+                self.entry_model.insert(0, p['model'])
+                # Unit and Price are no longer displayed, so no need to fill them.
+                # But we will use them in add_item.
+                
+                # Fill Machine Model if exists
+                self.entry_machine.delete(0, tk.END)
+                machine_model = p.get('machine_model', '')
+                self.entry_machine.insert(0, machine_model)
+                debug_utils.log("UI fields updated.")
+            else:
+                 debug_utils.log("Product not found in manager.")
+        except Exception as e:
+            debug_utils.log(f"Error in on_product_select: {e}")
 
     def on_product_search(self, event):
-        # ... (keep existing)
-        typed = self.cb_product.get()
-        if typed == '':
-            data = self.all_product_names
-        else:
-            data = [item for item in self.all_product_names if typed.lower() in item.lower()]
-        self.cb_product['values'] = data
+        try:
+            # Skip special keys to avoid excess processing/logging
+            if event.keysym in ['Up', 'Down', 'Left', 'Right', 'Return', 'Escape']:
+                return
 
-    def on_customer_search(self, event):
+            typed = self.cb_product.get()
+            # debug_utils.log(f"Searching: {typed}") # Verbose, maybe comment out if too much
+            
+            if typed == '':
+                data = self.all_product_names
+            else:
+                data = [item for item in self.all_product_names if typed.lower() in item.lower()]
+            
+            self.cb_product['values'] = data
+        except Exception as e:
+             debug_utils.log(f"Error in on_product_search: {e}")
         typed = self.entry_customer.get()
         if typed == '':
             data = self.all_customers
