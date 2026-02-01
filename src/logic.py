@@ -9,17 +9,26 @@ if getattr(sys, 'frozen', False):
     # Frozen (EXE/APP)
     base = os.path.dirname(sys.executable)
     if sys.platform == 'darwin' and 'Contents/MacOS' in base:
-        # Check external folder (Portable Mode)
-        possible_base = os.path.abspath(os.path.join(base, '../../..'))
-        external_config = os.path.join(possible_base, 'config.json')
-        external_products = os.path.join(possible_base, 'products.json')
+        # Standard Mac App Bundle Structure: Not sandboxed, but path is inside bundle
+        # We want to break out of the bundle to the folder CONTAINING the .app
+        # base is .../DeliveryOrderGen.app/Contents/MacOS
+        # We need .../ (The dir containing DeliveryOrderGen.app)
         
-        debug_utils.log(f"Path Check: Base={base}, PossibleBase={possible_base}")
+        # ../.. -> Contents
+        # ../../.. -> Directory containing .app
         
-        if os.path.exists(external_config) or os.path.exists(external_products):
-             BASE_DIR = possible_base
-             debug_utils.log(f"Using Portable Mode: {BASE_DIR}")
+        app_containing_dir = os.path.abspath(os.path.join(base, '../../..'))
+        debug_utils.log(f"Mac App Bundle detected. Containing Dir: {app_containing_dir}")
+        
+        # Check permissions: Can we write to the app's folder?
+        # If user puts app in /Applications, this is usually False.
+        # If on Desktop/Downloads, this is usually True.
+        
+        if os.access(app_containing_dir, os.W_OK):
+             BASE_DIR = app_containing_dir
+             debug_utils.log(f"App dir is writable. Using Portable Mode: {BASE_DIR}")
         else:
+             debug_utils.log(f"App dir {app_containing_dir} is NOT writable. Falling back to Documents.")
              # Installed Mode: Use ~/Documents/DeliveryOrderData
              user_dir = os.path.expanduser("~/Documents/DeliveryOrderData")
              if not os.path.exists(user_dir):
