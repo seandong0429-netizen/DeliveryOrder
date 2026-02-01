@@ -3,7 +3,7 @@ from tkinter import ttk, messagebox, filedialog
 from PIL import Image, ImageTk
 import datetime
 import os
-from logic import ProductManager, OrderNumberGenerator
+from logic import ProductManager, OrderNumberGenerator, CustomerManager
 from history import HistoryManager
 from export_pdf import export_pdf
 from export_excel import export_to_excel
@@ -17,6 +17,13 @@ class DeliveryApp:
         self.product_manager = ProductManager()
         self.order_generator = OrderNumberGenerator()
         self.history_manager = HistoryManager()
+        self.customer_manager = CustomerManager()
+        
+        # Sync customers from history (Backward Compatibility)
+        try:
+            self.customer_manager.sync_from_history(self.history_manager.orders)
+        except Exception as e:
+            debug_utils.log(f"Sync customers failed: {e}")
         debug_utils.log("Managers initialized")
         
         self.current_items = []
@@ -76,6 +83,8 @@ class DeliveryApp:
         menubar.add_cascade(label="文件 (File)", menu=file_menu)
         
         file_menu.add_command(label="导入产品资料 (Import Products)...", command=self.import_products)
+        file_menu.add_command(label="导入产品资料 (Import Products)...", command=self.import_products)
+        file_menu.add_command(label="导入客户资料 (Import Customers)...", command=self.import_customers)
         file_menu.add_separator()
         file_menu.add_command(label="退出 (Exit)", command=self.root.quit)
         
@@ -136,6 +145,37 @@ class DeliveryApp:
         tk.Label(top, text=info_text, font=('Arial', 10), justify='center').pack(pady=10)
         
         ttk.Button(top, text="确定 / OK", command=top.destroy).pack(pady=10)
+
+    def import_customers(self):
+        debug_utils.log("Import Customers clicked")
+        msg = (
+            "请准备 Excel 表格 (.xlsx)，包含以下列名：\n\n"
+            "1. 客户名称 (必填)\n"
+            "   (支持表头: 客户名称, Customer, Name)\n"
+            "2. 客户地址 (选填)\n"
+            "   (支持表头: 客户地址, Address, 地址)\n\n"
+            "是否立即选择文件导入？"
+        )
+        if not messagebox.askokcancel("导入说明", msg):
+            return
+
+        filepath = filedialog.askopenfilename(
+            title="选择客户资料表格",
+            filetypes=[("Excel Files", "*.xlsx *.xls")]
+        )
+        if not filepath: return
+
+        try:
+            count, error = self.customer_manager.import_from_excel(filepath)
+            if error:
+                 messagebox.showerror("Import Failed", error)
+            else:
+                 messagebox.showinfo("Success", f"成功导入 {count} 个客户！")
+                 # Refresh dropdown
+                 self.all_customers = self.customer_manager.get_names()
+                 self.entry_customer['values'] = self.all_customers
+        except Exception as e:
+             messagebox.showerror("Error", str(e))
 
     def import_products(self):
         debug_utils.log("User clicked Import Products")
@@ -250,10 +290,11 @@ class DeliveryApp:
         # Row 1
         ttk.Label(top_frame, text="客户名称:").grid(row=0, column=0, sticky='w')
         
-        self.all_customers = self.history_manager.get_unique_customers()
+        self.all_customers = self.customer_manager.get_names()
         self.entry_customer = ttk.Combobox(top_frame, values=self.all_customers, width=28)
         self.entry_customer.grid(row=0, column=1, padx=5, pady=5)
         self.entry_customer.bind("<KeyRelease>", self.on_customer_search)
+        self.entry_customer.bind("<<ComboboxSelected>>", self.on_customer_select)
         
         ttk.Label(top_frame, text="客户地址:").grid(row=0, column=2, sticky='w')
         self.entry_address = ttk.Entry(top_frame, width=30)
@@ -500,6 +541,18 @@ class DeliveryApp:
             self.cb_product['values'] = data
         except Exception as e:
              debug_utils.log(f"Error in perform_search: {e}")
+
+    def on_customer_select(self, event):
+        try:
+            name = self.entry_customer.get().strip()
+            c = self.customer_manager.get_customer_by_name(name)
+            if c:
+                addr = c.get('address', '')
+                self.entry_address.delete(0, tk.END)
+                self.entry_address.insert(0, addr)
+        except Exception as e:
+            debug_utils.log(f"Error on customer select: {e}")
+
     def on_customer_search(self, event):
         typed = self.entry_customer.get()
         if typed == '':
@@ -777,6 +830,12 @@ class DeliveryApp:
         if not self.current_items:
             messagebox.showwarning("Warning", "请添加产品 / Please add items")
             return
+
+        # Auto-save Customer (New/Update Address)
+        try:
+            self.customer_manager.add_customer(customer, self.entry_address.get().strip())
+        except Exception as e:
+             debug_utils.log(f"Auto-save customer failed: {e}")
 
         # 1. Generate ID
         order_id = self.order_generator.generate_new_number()

@@ -61,7 +61,124 @@ else:
     debug_utils.log(f"Using Source Code Mode: {BASE_DIR}")
 
 PRODUCTS_FILE = os.path.join(BASE_DIR, 'products.json')
+CUSTOMERS_FILE = os.path.join(BASE_DIR, 'customers.json')
 CONFIG_FILE = os.path.join(BASE_DIR, 'config.json')
+
+class CustomerManager:
+    def __init__(self):
+        self.customers = []
+        self.load_customers()
+
+    def load_customers(self):
+        debug_utils.log(f"Loading customers from {CUSTOMERS_FILE}")
+        if os.path.exists(CUSTOMERS_FILE):
+            try:
+                with open(CUSTOMERS_FILE, 'r', encoding='utf-8') as f:
+                    self.customers = json.load(f)
+            except Exception as e:
+                debug_utils.log(f"Error loading customers: {e}")
+                self.customers = []
+        else:
+            self.customers = []
+
+    def save_customers(self):
+        try:
+            with open(CUSTOMERS_FILE, 'w', encoding='utf-8') as f:
+                json.dump(self.customers, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            debug_utils.log(f"Error saving customers: {e}")
+
+    def get_names(self):
+        return [c['name'] for c in self.customers]
+
+    def get_customer_by_name(self, name):
+        for c in self.customers:
+            if c['name'] == name:
+                return c
+        return None
+
+    def add_customer(self, name, address):
+        name = name.strip()
+        if not name: return
+        
+        # Check update
+        for c in self.customers:
+            if c['name'] == name:
+                c['address'] = address # Update address
+                self.save_customers()
+                return
+        
+        # New
+        self.customers.append({"name": name, "address": address})
+        self.save_customers()
+
+    def sync_from_history(self, orders):
+        """Populate customers from history if list is empty or to sync."""
+        count = 0
+        existing_names = set(self.get_names())
+        
+        # Process in chrono order so latest address wins? 
+        # Actually logic is: if not in DB, add it.
+        # Ideally we want the LATEST address.
+        # Orders are usually sorted desc?
+        
+        for order in orders:
+            name = order.get('customer', '').strip()
+            if not name: continue
+            
+            addr = order.get('address', '').strip()
+            
+            if name not in existing_names:
+                self.customers.append({"name": name, "address": addr})
+                existing_names.add(name)
+                count += 1
+            # Optional: Update address if exists but empty? 
+            # Let's keep it simple: Only add news.
+            
+        if count > 0:
+            self.save_customers()
+            debug_utils.log(f"Synced {count} customers from history.")
+
+    def import_from_excel(self, filepath):
+        try:
+            import openpyxl
+            wb = openpyxl.load_workbook(filepath, data_only=True)
+            sheet = wb.active
+            
+            headers = {}
+            for cell in sheet[1]:
+                val = str(cell.value).strip().lower() if cell.value else ""
+                if val in ['客户名称', 'customer', 'name', '姓名', '客户']: headers['name'] = cell.column - 1
+                elif val in ['客户地址', 'address', '地址']: headers['address'] = cell.column - 1
+            
+            if 'name' not in headers:
+                return 0, "Excel must contain a 'Name' (客户名称) column."
+            
+            items_to_add = []
+            for row in sheet.iter_rows(min_row=2, values_only=True):
+                name = row[headers['name']]
+                if not name: continue
+                
+                addr_idx = headers.get('address')
+                addr = row[addr_idx] if addr_idx is not None and row[addr_idx] else ""
+                
+                items_to_add.append({
+                    "name": str(name).strip(),
+                    "address": str(addr).strip()
+                })
+            
+            # Batch add
+            added = 0
+            for item in items_to_add:
+                # Reuse add logic without constant saving? 
+                # Optimization for later. For now calls add_customer
+                self.add_customer(item['name'], item['address'])
+                added += 1
+                
+            return added, None
+            
+        except Exception as e:
+            return 0, str(e)
 
 class ProductManager:
     def __init__(self):
